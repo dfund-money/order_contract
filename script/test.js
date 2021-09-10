@@ -4,7 +4,7 @@ const IUniswapV2PairAbi = require('../build/contracts/IUniswapV2Pair.json').abi
 const IUniswapV2Router02Abi = require('../build/contracts/IUniswapV2Router02.json').abi
 const IUniswapV2FactoryAbi = require('../build/contracts/IUniswapV2Factory.json').abi
 const IErc20Abi = require("../build/contracts/IERC20.json").abi
- 
+const DbData = require('./db.js')
 const Web3 = require('web3')
 
 const cfg = require('../truffle-config.js')
@@ -59,21 +59,27 @@ async function check() {
   // let factoryAddr = await router.methods.factory().call()
   // console.log("factoryAddr:", factoryAddr)
 
-  // let price = 1100000; // base 10 **6
-  // let amount = web3.utils.toWei("2")
-  // let t1 = await sw.methods.changeOrder(wanEth, wanUsdt, price, amount).send({from:admin})
-  // console.log("t1:",t1)
+  let price = 1200000; // base 10 **9
+  let amount = web3.utils.toWei("2.844")
+  let t1 = await sw.methods.changeOrder(wanEth, wanUsdt, price, amount).send({from:admin})
+  console.log("t1:",t1)
 
 
-  let blockNumber = await web3.eth.getBlockNumber();
-  let fromBlock = blockNumber - 1000
-  let eventOption = {
-    fromBlock
+
+}
+
+
+async function db() {
+  let dbData = new DbData()
+  await dbData.dbinit()
+  startBlock = cfg[network].startBlock
+  let lastBlock = await dbData.getLastBlock()
+  if(startBlock < lastBlock ){
+    startBlock = lastBlock
   }
-  let events = await sw.getPastEvents("changeOrderEvent", eventOption)
-  console.log("events:", events)
 
 
+  console.log("startBlock:", startBlock)
 }
 async function main() {
   try {

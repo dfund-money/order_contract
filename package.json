@@ -13,6 +13,7 @@
     "@truffle/hdwallet-provider": "^1.5.0",
     "@uniswap/sdk": "^3.0.3",
     "keccak256": "^1.0.3",
+    "mongoose": "^6.0.5",
     "truffle": "^5.1.44"
   }
 }
