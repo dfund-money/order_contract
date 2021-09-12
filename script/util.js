@@ -14,7 +14,7 @@ async function init() {
   let admin = "0xEf73Eaa714dC9a58B0990c40a01F4C0573599959"
   let feeTo = "0xbED2Af202C908d4134bbDFe280A3423597C204FD"
   let routerAddr = "0xeA300406FE2eED9CD2bF5c47D01BECa8Ad294Ec1"
-  let swAddr = "0xcD1a6DdEae2Ce3EaE2Dd8677dCe18E52b75A6390"
+  
 
   let wanEth = "0x48344649B9611a891987b2Db33fAada3AC1d05eC"
   let wanUsdt = "0x3D5950287b45F361774E5fB6e50d70eEA06Bc167"
@@ -26,9 +26,9 @@ async function init() {
   let facctoryAddr = "0x1125C5F53C72eFd175753d427aA116B972Aa5537"
 
   let sw,router,factory
-  let web3 = new Web3(cfg[cfg.network].web3Url)
+  let web3 = new Web3(await cfg[cfg.network].provider())
   
-  sw = new web3.eth.Contract(swAbi, swAddr)
+  sw = new web3.eth.Contract(swAbi, cfg[cfg.network].swAddr)
   router = new web3.eth.Contract(IUniswapV2Router02Abi, routerAddr)
   factory = new web3.eth.Contract(IUniswapV2FactoryAbi, facctoryAddr)
 
@@ -72,7 +72,7 @@ async function init() {
   // let events = await sw.getPastEvents("changeOrderEvent", eventOption)
   // console.log("events:", events)
 
-  return {sw}
+  return {sw,web3,router,factory}
 }
 
 module.exports = {
