@@ -84,8 +84,8 @@ contract Swap is AccessControl {
     // TODO check, if not approve, delete this record.
     if( IERC20(_tokenIn).balanceOf(records[key].user) < _amountIn 
       || IERC20(_tokenIn).allowance(records[key].user, address(this)) < _amountIn ) {
-            delete records[key];
             emit changeOrderEvent(key, records[key].user, records[key].fromToken, records[key].toToken, records[key].price, 0);
+            delete records[key];
             return;
       }
     IERC20(_tokenIn).safeTransferFrom(records[key].user, address(this), _amountIn);
@@ -97,15 +97,17 @@ contract Swap is AccessControl {
     uint amountInWithoutFee = _amountIn.sub(fee);
     IERC20(_tokenIn).safeApprove(router, amountInWithoutFee);
 
+    // TODO check the _amountOutMin is about equal to price.
     IUniswapV2Router02(router).swapExactTokensForTokens(amountInWithoutFee, _amountOutMin, path, records[key].user, block.timestamp);
 
     uint newAmount = records[key].amount-_amountIn;
+    emit changeOrderEvent(key, records[key].user, records[key].fromToken, records[key].toToken, records[key].price, newAmount);
+
     if(newAmount == 0) {
       delete records[key];
     } else {
       records[key].amount = newAmount;
     }
-    emit changeOrderEvent(key, records[key].user, records[key].fromToken, records[key].toToken, records[key].price, newAmount);
   }
 }
 
