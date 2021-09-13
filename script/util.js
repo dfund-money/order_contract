@@ -8,21 +8,9 @@ const DbData = require('./db.js')
 const Web3 = require('web3')
 
 const cfg = require('./config.js')
-const network = 'testnet'
 
 async function init() {
-  let admin = "0xEf73Eaa714dC9a58B0990c40a01F4C0573599959"
-  let feeTo = "0xbED2Af202C908d4134bbDFe280A3423597C204FD"
-  let routerAddr = "0xeA300406FE2eED9CD2bF5c47D01BECa8Ad294Ec1"
-  
-
-  let wanEth = "0x48344649B9611a891987b2Db33fAada3AC1d05eC"
-  let wanUsdt = "0x3D5950287b45F361774E5fB6e50d70eEA06Bc167"
-  let wand = "0x230f0c01b8e2c027459781e6a56da7e1876efdbe"
-  let wasp = "0x830053DABd78b4ef0aB0FeC936f8a1135B68da6f"
-  let zoo = "0x890589dC8BD3F973dcAFcB02b6e1A133A76C8135"
-  let IUniswapV2PairAddr = "0xfE5486f20826c3199bf6b68E05a49775C823A1D8"  //wasp zoo
-
+  let routerAddr = cfg[cfg.network].router
   let facctoryAddr = "0x1125C5F53C72eFd175753d427aA116B972Aa5537"
 
   let sw,router,factory

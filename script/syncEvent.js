@@ -62,6 +62,10 @@ async function sync() {
   
 }
 async function main() {
+  process.on('uncaughtException', (err, origin) => {
+    console.log("uncaughtException:", err)
+  });
+
   while(true){
     try {
       

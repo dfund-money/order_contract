@@ -11,14 +11,8 @@ const cfg =  require('./config.js')
 const util = require('./util.js')
 
 
-let admin = "0xef73eaa714dc9a58b0990c40a01f4c0573599959"
-let feeTo = "0xbED2Af202C908d4134bbDFe280A3423597C204FD"
-let routerAddr = "0xeA300406FE2eED9CD2bF5c47D01BECa8Ad294Ec1"
+let admin = cfg[cfg.network].admin
 
-let wanEth = "0x48344649B9611a891987b2Db33fAada3AC1d05eC"
-let wanUsdt = "0x3D5950287b45F361774E5fB6e50d70eEA06Bc167"
-let wand = "0x230f0c01b8e2c027459781e6a56da7e1876efdbe"
-let IUniswapV2PairAddr = "0xfE5486f20826c3199bf6b68E05a49775C823A1D8"  //wasp zoo
 
 
 let sw,router,factory
@@ -27,10 +21,23 @@ let web3
 let zoo = cfg[cfg.network].zoo
 let wasp = cfg[cfg.network].wasp
 async function init() {
-  return await util.init()
+  let obj = await util.init()
+  sw = obj.sw
+  web3 = obj.web3
+  router = obj.router
 
 
+}
 
+async function initToken() {
+  let zooToken = new web3.eth.Contract(IErc20Abi, zoo)
+  let waspToken = new web3.eth.Contract(IErc20Abi, wasp)
+  let tx
+  tx = await zooToken.methods.approve(cfg[cfg.network].swAddr,web3.utils.toWei("0")).send({from:admin})
+  console.log("init:", tx)
+  await waspToken.methods.approve(cfg[cfg.network].swAddr,web3.utils.toWei("0")).send({from:admin})
+  await zooToken.methods.approve(cfg[cfg.network].swAddr,web3.utils.toWei("1000000000")).send({from:admin})
+  await waspToken.methods.approve(cfg[cfg.network].swAddr,web3.utils.toWei("1000000000")).send({from:admin})
 }
 async function check() {
 
@@ -87,22 +94,35 @@ async function addSwap(){
     amount: '200000000000000000'
   }
 
-  let v  = web3.utils.toWei("0.1")
-  let outMin = await router.methods.getAmountsOut(v,[zoo,wasp]).call()
+  let v  = "0.1"
+
+  let v2  = new BigNumber(web3.utils.toWei(v))
+  let v3 = v2.times(997).div(1000)
+  let outMin = await router.methods.getAmountsOut(v3,[zoo,wasp]).call()
   console.log("outMin:",outMin)
 
 
   let o = new BigNumber(outMin[1])
-  let tx = await sw.methods.swap(order.key,[zoo, wasp], v, o).send({from:admin})
+  let tx = await sw.methods.swap(order.key,[zoo, wasp], v2, o).send({from:admin})
   console.log("tx:",JSON.stringify(tx,null,2))
 }
 
 
 async function addOrder(){
-  let price = 1* 10 **9
-  let amount = web3.utils.toWei("0.2")
-  let t1 = await sw.methods.changeOrder(zoo, wasp, price, amount).send({from:admin})
+
+  let vi  = "0.135"
+  let v2  = new BigNumber(web3.utils.toWei(vi))
+  let outMin = await router.methods.getAmountsOut(v2,[zoo,wasp]).call()
+  let vo = new BigNumber(outMin[outMin.length-1])
+  let price = vo.times(10**9).idiv(v2)
+  console.log("cur price:", price.toString(10))
+
+
+for(let i=-5; i<5; i++){
+  let t1 = await sw.methods.changeOrder(zoo, wasp, price.times(100+i).idiv(100), v2).send({from:admin})
   console.log("t1:",JSON.stringify(t1,null,2))
+}
+
 
   /*
     {
@@ -120,14 +140,16 @@ async function addOrder(){
 
 
 async function main() {
+
   try {
-    let obj = await init()
-    sw = obj.sw
-    web3 = obj.web3
-    router = obj.router
+    await init()
+
+  
+    await initToken()
+
     await addOrder()
     //await check()
-    await addSwap()
+    //await addSwap()
   }catch(err) {
     console.log("err:", err)
   }

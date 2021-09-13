@@ -41,8 +41,9 @@ class DbData {
       process.exit(0);
     }
   }
-  async changeRecord(record) {
-    let ret = await Order.findOne({key:record.key})
+  async fetchRecord(fromToken, toToken, price) {
+    let records = await Order.find({fromToken:fromToken, toToken:toToken, price: { $lt: price }, amount: {$gt:0}})
+    return records
   }
   async getLastBlock() {
     let last = await Info.findOne()

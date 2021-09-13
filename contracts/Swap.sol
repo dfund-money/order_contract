@@ -31,6 +31,7 @@ contract Swap is AccessControl {
 
   address public router;
   address public feeTo;
+  address public operator;
 
   mapping(bytes32=>Order) public records;
 
@@ -39,17 +40,19 @@ contract Swap is AccessControl {
   // event insertOrder(bytes32 indexed key, address user, address fromToken, address toToken, uint price, uint amount);
   // event updateOrder(bytes32 indexed key, address user, address fromToken, address toToken, uint price, uint newAmount);
   // event deleteOrder(bytes32 indexed key, address user, address fromToken, address toToken, uint price, uint newAmount);
-  constructor(address _admin, address _router, address _feeTo) public {
+  constructor(address _admin, address _router, address _feeTo, address _operator) public {
     _setupRole(DEFAULT_ADMIN_ROLE, _admin);
     router = _router;
     feeTo = _feeTo;
+    operator = _operator;
   }
 
   // TODO: need this?
-  function setDepedency(address _router, address _feeTo) external {
+  function setDepedency(address _router, address _feeTo, address _operator) external {
     require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "not admin");
     router = _router;
     feeTo = _feeTo;
+    operator = _operator;
   }
 
   function getKey(address user, address fromToken, address toToken, uint price) public pure returns (bytes32 key){
@@ -75,13 +78,17 @@ contract Swap is AccessControl {
     emit changeOrderEvent(key, msg.sender, _fromToken, _toToken, _price, _amount);
   }
   function swap(bytes32 key, address[] calldata path, uint256 _amountIn, uint256 _amountOutMin) external {
-    require(path.length >= 2);
+    require(msg.sender == operator,"invalid sender");
+    require(path.length >= 2,"invalid path");
     require(_amountIn != 0 && _amountIn <= records[key].amount,"invalid amount");
     require(records[key].fromToken == path[0]);
     require(records[key].toToken == path[path.length-1]);
     address _tokenIn = path[0];
 
-    // TODO check, if not approve, delete this record.
+    //  check the _amountOutMin is >= price.
+    require(_amountOutMin.mul(10**9).div(_amountIn) >= records[key].price, "invalid price");
+
+    //  if not approve, delete this record.
     if( IERC20(_tokenIn).balanceOf(records[key].user) < _amountIn 
       || IERC20(_tokenIn).allowance(records[key].user, address(this)) < _amountIn ) {
             emit changeOrderEvent(key, records[key].user, records[key].fromToken, records[key].toToken, records[key].price, 0);
@@ -90,17 +97,16 @@ contract Swap is AccessControl {
       }
     IERC20(_tokenIn).safeTransferFrom(records[key].user, address(this), _amountIn);
 
-
     uint fee = _amountIn.mul(3).div(1000);
     IERC20(_tokenIn).safeTransfer(feeTo, fee);
 
     uint amountInWithoutFee = _amountIn.sub(fee);
     IERC20(_tokenIn).safeApprove(router, amountInWithoutFee);
 
-    // TODO check the _amountOutMin is about equal to price.
+
     IUniswapV2Router02(router).swapExactTokensForTokens(amountInWithoutFee, _amountOutMin, path, records[key].user, block.timestamp);
 
-    uint newAmount = records[key].amount-_amountIn;
+    uint newAmount = records[key].amount.sub(_amountIn);
     emit changeOrderEvent(key, records[key].user, records[key].fromToken, records[key].toToken, records[key].price, newAmount);
 
     if(newAmount == 0) {
