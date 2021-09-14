@@ -50,10 +50,10 @@ module.exports = {
     startBlock: 15408713,
     wasp:wasp,
     zoo:zoo,
-    operator: "0x2Ffc3D614Ea8Cb4d95D9AeF12bAdE14E24405Ce2",
+    operator: "0x70310086a85135c97308B66e2CaFcB6EaDB345E6",
     router: "0xeA300406FE2eED9CD2bF5c47D01BECa8Ad294Ec1",
-    admin: "0xa09d1b9f1262a9a19f85336dD198bBdbf57EEF70",
-    feeTo: "0x7dAe6A1E7592a6Bb709d2DA4b8E7825d35f124AA",
+    admin: "0x0984a8b9c81067822f18479319a02a73Dd535a9e",
+    feeTo: "0x3c360C2269286690E8c5CBC6Df1D1A6e628831F9",
     web3Url: "https://gwan-ssl.wandevs.org:56891",
     provider: ()=>{
       const passwd = process.env.PASSWD
@@ -62,7 +62,7 @@ module.exports = {
       const privateKey = keythereum.recover(passwd, keyObject);
       return new HDWalletProvider('0x'+privateKey.toString('hex'), "https://gwan-ssl.wandevs.org:56891")
     },
-    swAddr: "0xF0c10c37A1b39Dfa0c06C6d1d0508390e3c0dF20",
+    swAddr: "0xefF511bC46D6f3fB2398061F6F49eC2518334799",
     supportedPair:[{
       fromToken:zoo,
       toToken: wasp,
