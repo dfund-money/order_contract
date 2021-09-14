@@ -1,5 +1,7 @@
 const keccak256 = require('keccak256')
 const BigNumber = require('bignumber.js')
+const HDWalletProvider = require('@truffle/hdwallet-provider');
+
 const swAbi = require('../build/contracts/Swap.json').abi
 const IUniswapV2PairAbi = require('../build/contracts/IUniswapV2Pair.json').abi
 const IUniswapV2Router02Abi = require('../build/contracts/IUniswapV2Router02.json').abi
@@ -13,15 +15,15 @@ const util = require('./util.js')
 
 let admin = cfg[cfg.network].admin
 
-
-
+let testPrivider =  new HDWalletProvider("skill level pulse dune pattern rival used syrup inner first balance sad", cfg[cfg.network].web3Url, 0, 9)
+let testUser = "0xEf73Eaa714dC9a58B0990c40a01F4C0573599959"
 let sw,router,factory
 let web3 
 
 let zoo = cfg[cfg.network].zoo
 let wasp = cfg[cfg.network].wasp
 async function init() {
-  let obj = await util.init()
+  let obj = await util.init(testPrivider)
   sw = obj.sw
   web3 = obj.web3
   router = obj.router
@@ -33,11 +35,10 @@ async function initToken() {
   let zooToken = new web3.eth.Contract(IErc20Abi, zoo)
   let waspToken = new web3.eth.Contract(IErc20Abi, wasp)
   let tx
-  tx = await zooToken.methods.approve(cfg[cfg.network].swAddr,web3.utils.toWei("0")).send({from:admin})
-  console.log("init:", tx)
-  await waspToken.methods.approve(cfg[cfg.network].swAddr,web3.utils.toWei("0")).send({from:admin})
-  await zooToken.methods.approve(cfg[cfg.network].swAddr,web3.utils.toWei("1000000000")).send({from:admin})
-  await waspToken.methods.approve(cfg[cfg.network].swAddr,web3.utils.toWei("1000000000")).send({from:admin})
+  tx = await zooToken.methods.approve(cfg[cfg.network].swAddr,web3.utils.toWei("0")).send({from:testUser})
+  await waspToken.methods.approve(cfg[cfg.network].swAddr,web3.utils.toWei("0")).send({from:testUser})
+  await zooToken.methods.approve(cfg[cfg.network].swAddr,web3.utils.toWei("1000000000")).send({from:testUser})
+  await waspToken.methods.approve(cfg[cfg.network].swAddr,web3.utils.toWei("1000000000")).send({from:testUser})
 }
 async function check() {
 
@@ -119,7 +120,7 @@ async function addOrder(){
 
 
 for(let i=-5; i<5; i++){
-  let t1 = await sw.methods.changeOrder(zoo, wasp, price.times(100+i).idiv(100), v2).send({from:admin})
+  let t1 = await sw.methods.changeOrder(zoo, wasp, price.times(100+i).idiv(100), v2).send({from:testUser})
   console.log("t1:",JSON.stringify(t1,null,2))
 }
 
@@ -145,7 +146,7 @@ async function main() {
     await init()
 
   
-    await initToken()
+    //await initToken()
 
     await addOrder()
     //await check()

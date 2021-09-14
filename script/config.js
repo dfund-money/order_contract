@@ -12,11 +12,11 @@ let waspt = "0x830053DABd78b4ef0aB0FeC936f8a1135B68da6f"
 
 
 
-let zoo = ""
-let wasp = ""
+let zoo = "0x6e11655d6ab3781c6613db8cb1bc3dee9a7e111f"
+let wasp = "0x8b9f9f4aa70b1b0d586be8adfb19c1ac38e05e9a"
 
 module.exports = {
-  network:"testnet",
+  network:"mainnet",
   "testnet":{
     dburl : "mongodb://localhost:27017/testDb",
     startBlock: 15408713,

@@ -9,12 +9,18 @@ const Web3 = require('web3')
 
 const cfg = require('./config.js')
 
-async function init() {
+async function init(provider) {
   let routerAddr = cfg[cfg.network].router
   let facctoryAddr = "0x1125C5F53C72eFd175753d427aA116B972Aa5537"
 
   let sw,router,factory
-  let web3 = new Web3(await cfg[cfg.network].provider())
+  let web3
+  if(provider){
+    web3 = new Web3(provider)
+  }else{
+    web3 = new Web3(await cfg[cfg.network].provider())
+  }
+  
   
   sw = new web3.eth.Contract(swAbi, cfg[cfg.network].swAddr)
   router = new web3.eth.Contract(IUniswapV2Router02Abi, routerAddr)
