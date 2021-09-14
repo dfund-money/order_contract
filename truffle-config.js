@@ -18,12 +18,12 @@
  *
  */
 
-const HDWalletProvider = require('@truffle/hdwallet-provider');
+// const HDWalletProvider = require('@truffle/hdwallet-provider');
 // const infuraKey = "fj4jll3k.....";
 //
-const fs = require('fs');
-const mnemonic = fs.readFileSync(".secret").toString().trim();
-
+// const fs = require('fs');
+// const mnemonic = fs.readFileSync(".secret").toString().trim();
+const cfg = require('./script/config.js')
 module.exports = {
   /**
    * Networks define how you connect to your ethereum client and let you set the
@@ -84,8 +84,15 @@ module.exports = {
       skipDryRun:true,
     },
     testnet: {
-      provider: ()=>new HDWalletProvider(mnemonic, "https://gwan-ssl.wandevs.org:46891", 0, 9),
+      provider: cfg['testnet'].provider,
       network_id: "999",
+      skipDryRun: true,
+      gas: 1e7,
+      gasPrice: 1e9
+    },
+    mainnet: {
+      provider: cfg['mainnet'].provider,
+      network_id: "888",
       skipDryRun: true,
       gas: 1e7,
       gasPrice: 1e9
