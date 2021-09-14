@@ -42,7 +42,7 @@ class DbData {
     }
   }
   async fetchRecord(fromToken, toToken, price) {
-    let records = await Order.find({fromToken:fromToken, toToken:toToken, price: { $lt: price }, amount: {$gt:0}})
+    let records = await Order.find({fromToken:fromToken, toToken:toToken, price: { $lt: price }, amount: {$ne:"0"}})
     return records
   }
   async getLastBlock() {

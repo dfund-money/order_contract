@@ -12,8 +12,8 @@ let waspt = "0x830053DABd78b4ef0aB0FeC936f8a1135B68da6f"
 
 
 
-let zoo = "0x6e11655d6ab3781c6613db8cb1bc3dee9a7e111f"
-let wasp = "0x8b9f9f4aa70b1b0d586be8adfb19c1ac38e05e9a"
+let zoo = "0x6e11655d6aB3781C6613db8CB1Bc3deE9a7e111F"
+let wasp = "0x8B9F9f4aA70B1B0d586BE8aDFb19c1Ac38e05E9a"
 
 module.exports = {
   network:"mainnet",
