@@ -146,7 +146,7 @@ async function main() {
     await init()
 
   
-    //await initToken()
+    await initToken()
 
     await addOrder()
     //await check()
