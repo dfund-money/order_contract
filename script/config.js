@@ -62,7 +62,7 @@ module.exports = {
       const privateKey = keythereum.recover(passwd, keyObject);
       return new HDWalletProvider('0x'+privateKey.toString('hex'), "https://gwan-ssl.wandevs.org:56891")
     },
-    swAddr: "0xefF511bC46D6f3fB2398061F6F49eC2518334799",
+    swAddr: "0xDaA0e3F0BAF421Bc71c1A01E25c93936b97A4b97",
     supportedPair:[{
       fromToken:zoo,
       toToken: wasp,

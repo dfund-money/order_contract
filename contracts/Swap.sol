@@ -24,10 +24,13 @@ interface IUniswapV2Router02{
         uint deadline
     ) external returns (uint[] memory amounts);
 }
-
+interface IEERC20 is IERC20 {
+  function symbol() external view returns (string memory);
+  function decimals() external view returns (uint8);
+}
 contract Swap is AccessControl {
   using SafeMath for uint;
-  using SafeERC20 for IERC20;
+  using SafeERC20 for IEERC20;
 
   address public router;
   address public feeTo;
@@ -77,6 +80,9 @@ contract Swap is AccessControl {
     }
     emit changeOrderEvent(key, msg.sender, _fromToken, _toToken, _price, _amount);
   }
+  function checkPrice(address _tokenIn, address _tokenOut, uint256 _amountOutMin, uint256 _amountIn, uint256 price) internal view returns (bool) {
+    return _amountOutMin.mul(10**9).mul(IEERC20(_tokenIn).decimals()).div(IEERC20(_tokenOut).decimals()).div(_amountIn) >= price;
+  }
   function swap(bytes32 key, address[] calldata path, uint256 _amountIn, uint256 _amountOutMin) external {
     require(msg.sender == operator,"invalid sender");
     require(path.length >= 2,"invalid path");
@@ -86,22 +92,22 @@ contract Swap is AccessControl {
     address _tokenIn = path[0];
 
     //  check the _amountOutMin is >= price.
-    require(_amountOutMin.mul(10**9).div(_amountIn) >= records[key].price, "invalid price");
+    require(checkPrice(_tokenIn,path[path.length-1], _amountOutMin, _amountOutMin, records[key].price), "invalid price");
 
     //  if not approve, delete this record.
-    if( IERC20(_tokenIn).balanceOf(records[key].user) < _amountIn 
-      || IERC20(_tokenIn).allowance(records[key].user, address(this)) < _amountIn ) {
+    if( IEERC20(_tokenIn).balanceOf(records[key].user) < _amountIn 
+      || IEERC20(_tokenIn).allowance(records[key].user, address(this)) < _amountIn ) {
             emit changeOrderEvent(key, records[key].user, records[key].fromToken, records[key].toToken, records[key].price, 0);
             delete records[key];
             return;
       }
-    IERC20(_tokenIn).safeTransferFrom(records[key].user, address(this), _amountIn);
+    IEERC20(_tokenIn).safeTransferFrom(records[key].user, address(this), _amountIn);
 
     uint fee = _amountIn.mul(3).div(1000);
-    IERC20(_tokenIn).safeTransfer(feeTo, fee);
+    IEERC20(_tokenIn).safeTransfer(feeTo, fee);
 
     uint amountInWithoutFee = _amountIn.sub(fee);
-    IERC20(_tokenIn).safeApprove(router, amountInWithoutFee);
+    IEERC20(_tokenIn).safeApprove(router, amountInWithoutFee);
 
 
     IUniswapV2Router02(router).swapExactTokensForTokens(amountInWithoutFee, _amountOutMin, path, records[key].user, block.timestamp);
