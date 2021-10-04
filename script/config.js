@@ -2,54 +2,79 @@
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 const keythereum = require("keythereum");
 
-const fs = require('fs');
+/* mainnet */
+class Tokens {
+  constructor(_tokens) {
+    this.supportedTokens = _tokens
+  }
 
-
-const We3 =require('web3')
-let web3 = new We3()
-let zoot = "0x890589dC8BD3F973dcAFcB02b6e1A133A76C8135"
-let waspt = "0x830053DABd78b4ef0aB0FeC936f8a1135B68da6f"
-
-
-
-let zoo = "0x6e11655d6aB3781C6613db8CB1Bc3deE9a7e111F"
-let wasp = "0x8B9F9f4aA70B1B0d586BE8aDFb19c1Ac38e05E9a"
+  name2addr(name) {
+    let res = this.supportedTokens.filter(item=>{
+      if(name === item.name) return true
+    })
+    return res[0].address
+  }
+  getnames() {
+    return this.supportedTokens.map(item=>{
+      return item.name
+    })
+  }
+  addr2name(addr) {
+    let res = this.supportedTokens.filter(item=>{
+      if(addr === item.address) return true
+    })
+    return res[0].name
+  }
+  getSupportedTokens(){
+    return this.supportedTokens
+  }
+  getAddrbyName(name){
+    let res = this.supportedTokens.filter(item=>{
+      if(name === item.name) return true
+    })
+    return res[0].address
+  }
+  getDecimal(addr){
+    let res = this.supportedTokens.filter(item=>{
+      if(addr === item.address) return true
+    })
+    return res[0].decimal
+  }
+  getMinAmount(addr){
+    let res = this.supportedTokens.filter(item=>{
+      if(addr === item.address) return true
+    })
+    return res[0].minAmount
+  }
+}
 
 module.exports = {
-  network:"mainnet",
-  "testnet":{
+  networks:["Wanchain","WanchainTestnet"],
+  "WanchainTestnet":{
     dburl : "mongodb://localhost:27017/testDb",
-    startBlock: 15408713,
-    wasp:waspt,
-    zoo:zoot,
-    operator: "0xfaeB08EF75458BbC511Bca1CAf4d7f5DF08EA834",
+    startBlock: 15920243,
+    operator: "0x70310086a85135c97308B66e2CaFcB6EaDB345E6",
     router: "0xeA300406FE2eED9CD2bF5c47D01BECa8Ad294Ec1",
-    admin: "0xEf73Eaa714dC9a58B0990c40a01F4C0573599959",
-    feeTo: "0xdC49B58d1Dc15Ff96719d743552A3d0850dD7057",
-    web3Url: "https://gwan-ssl.wandevs.org:46891", //"http://192.168.1.36:8545"
+    admin: "0x0984a8b9c81067822f18479319a02a73Dd535a9e",
+    feeTo: "0x3c360C2269286690E8c5CBC6Df1D1A6e628831F9",
+    web3Url: "https://gwan-ssl.wandevs.org:46891",
+    baseTokens:["0x916283cc60fdaf05069796466af164876e35d21f"], //wwan
     provider:  ()=>{
-      const mnemonic = fs.readFileSync(__dirname+"/../.secret").toString().trim();
-      return new HDWalletProvider(mnemonic, "https://gwan-ssl.wandevs.org:46891", 0, 9)
-      // const passwd = process.env.PASSWD
-      // const keystore = require('fs').readFileSync(__dirname+'/.keystore').toString();
-      // const keyObject = JSON.parse(keystore)
-      // const privateKey = keythereum.recover(passwd, keyObject);
-      // return new HDWalletProvider('0x'+privateKey.toString('hex'), "https://gwan-ssl.wandevs.org:46891")
-
+      const passwd = process.env.PASSWD
+      const keystore = require('fs').readFileSync(__dirname+'/.keystore').toString();
+      const keyObject = JSON.parse(keystore)
+      const privateKey = keythereum.recover(passwd, keyObject);
+      return new HDWalletProvider('0x'+privateKey.toString('hex'), "https://gwan-ssl.wandevs.org:46891", 0, 9)
     },
-    swAddr: "0xD29275b16a859fccd193a1a824D451e63b874D14",
-    supportedPair:[{
-      fromToken:zoot,
-      toToken: waspt,
-      path: [zoot,waspt],
-      minAmount: web3.utils.toWei("1"),
-    }]
+    swAddr: "0xD313d0bE023b55f0CdA0AFCc05E145949692ea79",
+    tokens:new Tokens([
+      {address:("0x890589dC8BD3F973dcAFcB02b6e1A133A76C8135").toLowerCase(),name: "zoo",decimal:18, minAmount: 1},
+      {address:("0x0A3B082C1ceDa3d35E5baD2776c5a5236044A03D").toLowerCase(),name: "wasp",decimal:18, minAmount: 1},
+    ])
   },
-  "mainnet":{
+  "Wanchain":{
     dburl : "mongodb://localhost:27017/mainDb",
-    startBlock: 15408713,
-    wasp:wasp,
-    zoo:zoo,
+    startBlock: 16886280,
     operator: "0x70310086a85135c97308B66e2CaFcB6EaDB345E6",
     router: "0xeA300406FE2eED9CD2bF5c47D01BECa8Ad294Ec1",
     admin: "0x0984a8b9c81067822f18479319a02a73Dd535a9e",
@@ -63,11 +88,17 @@ module.exports = {
       return new HDWalletProvider('0x'+privateKey.toString('hex'), "https://gwan-ssl.wandevs.org:56891")
     },
     swAddr: "0xDaA0e3F0BAF421Bc71c1A01E25c93936b97A4b97",
-    supportedPair:[{
-      fromToken:zoo,
-      toToken: wasp,
-      path: [zoo,wasp],
-      minAmount: web3.utils.toWei("1"),
-    }]
+    baseTokens: [ // wwan, wasp
+      "0xdabd997ae5e4799be47d6e69d9431615cba28f48", "0x8b9f9f4aa70b1b0d586be8adfb19c1ac38e05e9a"
+    ],
+    tokens:new Tokens([
+      {address:"0x6e11655d6ab3781c6613db8cb1bc3dee9a7e111f",name: "zoo",decimal:18, minAmount: 1},
+      {address:"0x8b9f9f4aa70b1b0d586be8adfb19c1ac38e05e9a",name: "wasp",decimal:18, minAmount: 1},
+      {address:"0x11e77e27af5539872efed10abaa0b408cfd9fbbd",name: "wanUsdt",decimal:6, minAmount: 1},
+      {address:"0x230f0c01b8e2c027459781e6a56da7e1876efdbe",name: "wand",decimal:18, minAmount: 1},
+      {address:"0xf665e0e3e75d16466345e1129530ec28839efaea",name: "wanXrp",decimal:8, minAmount: 1},
+      {address:"0xe3ae74d1518a76715ab4c7bedf1af73893cd435a",name: "wanEth",decimal:18, minAmount: 1},
+      {address:"0x50c439b6d602297252505a6799d84ea5928bcfb6",name: "wanBtc",decimal:8, minAmount: 1},
+    ])
   }
 }

@@ -83,15 +83,15 @@ module.exports = {
       gasPrice: 1000000000,
       skipDryRun:true,
     },
-    testnet: {
-      provider: cfg['testnet'].provider,
+    WanchainTestnet: {
+      provider: cfg['WanchainTestnet'].provider,
       network_id: "999",
       skipDryRun: true,
       gas: 1e7,
       gasPrice: 1e9
     },
-    mainnet: {
-      provider: cfg['mainnet'].provider,
+    Wanchain: {
+      provider: cfg['Wanchain'].provider,
       network_id: "888",
       skipDryRun: true,
       gas: 1e7,
