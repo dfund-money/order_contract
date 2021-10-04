@@ -80,7 +80,7 @@ contract Swap is AccessControl {
     }
     emit changeOrderEvent(key, msg.sender, _fromToken, _toToken, _price, _amount);
   }
-  function checkPrice(address _tokenIn, address _tokenOut, uint256 _amountOutMin, uint256 _amountIn, uint256 price) internal view returns (bool) {
+  function checkPrice(address _tokenIn, address _tokenOut, uint256 _amountOutMin, uint256 _amountIn, uint256 price) public view returns (bool) {
     return _amountOutMin.mul(10**9).mul(IEERC20(_tokenIn).decimals()).div(IEERC20(_tokenOut).decimals()).div(_amountIn) >= price;
   }
   function swap(bytes32 key, address[] calldata path, uint256 _amountIn, uint256 _amountOutMin) external {
@@ -92,7 +92,7 @@ contract Swap is AccessControl {
     address _tokenIn = path[0];
 
     //  check the _amountOutMin is >= price.
-    require(checkPrice(_tokenIn,path[path.length-1], _amountOutMin, _amountOutMin, records[key].price), "invalid price");
+    require(checkPrice(_tokenIn,path[path.length-1], _amountOutMin, _amountIn, records[key].price), "invalid price");
 
     //  if not approve, delete this record.
     if( IEERC20(_tokenIn).balanceOf(records[key].user) < _amountIn 

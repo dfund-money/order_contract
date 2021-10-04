@@ -23,6 +23,7 @@ class Tokens {
     let res = this.supportedTokens.filter(item=>{
       if(addr === item.address) return true
     })
+    if(res.length === 0) console.log("unknown address:", addr)
     return res[0].name
   }
   getSupportedTokens(){
@@ -53,7 +54,7 @@ module.exports = {
   "WanchainTestnet":{
     dburl : "mongodb://localhost:27017/testDb",
     startBlock: 15920243,
-    operator: "0x70310086a85135c97308B66e2CaFcB6EaDB345E6",
+    operator: "0xb9b7bb706598f27c62b90cc1a978318683c08df1",
     router: "0xeA300406FE2eED9CD2bF5c47D01BECa8Ad294Ec1",
     admin: "0x0984a8b9c81067822f18479319a02a73Dd535a9e",
     feeTo: "0x3c360C2269286690E8c5CBC6Df1D1A6e628831F9",
@@ -61,15 +62,15 @@ module.exports = {
     baseTokens:["0x916283cc60fdaf05069796466af164876e35d21f"], //wwan
     provider:  ()=>{
       const passwd = process.env.PASSWD
-      const keystore = require('fs').readFileSync(__dirname+'/.keystore').toString();
+      const keystore = require('fs').readFileSync(__dirname+'/.keystore/WanchainTestnet').toString();
       const keyObject = JSON.parse(keystore)
       const privateKey = keythereum.recover(passwd, keyObject);
-      return new HDWalletProvider('0x'+privateKey.toString('hex'), "https://gwan-ssl.wandevs.org:46891", 0, 9)
+      return new HDWalletProvider('0x'+privateKey.toString('hex'), "https://gwan-ssl.wandevs.org:46891")
     },
-    swAddr: "0xD313d0bE023b55f0CdA0AFCc05E145949692ea79",
+    swAddr: "0x65152a1BA29ee6355F37C363a2C2BB2e5CdE1c34",
     tokens:new Tokens([
       {address:("0x890589dC8BD3F973dcAFcB02b6e1A133A76C8135").toLowerCase(),name: "zoo",decimal:18, minAmount: 1},
-      {address:("0x0A3B082C1ceDa3d35E5baD2776c5a5236044A03D").toLowerCase(),name: "wasp",decimal:18, minAmount: 1},
+      {address:("0x830053DABd78b4ef0aB0FeC936f8a1135B68da6f").toLowerCase(),name: "wasp",decimal:18, minAmount: 1},
     ])
   },
   "Wanchain":{
@@ -82,12 +83,12 @@ module.exports = {
     web3Url: "https://gwan-ssl.wandevs.org:56891",
     provider: ()=>{
       const passwd = process.env.PASSWD
-      const keystore = require('fs').readFileSync(__dirname+'/.keystore').toString();
+      const keystore = require('fs').readFileSync(__dirname+'/.keystore/Wanchain').toString();
       const keyObject = JSON.parse(keystore)
       const privateKey = keythereum.recover(passwd, keyObject);
       return new HDWalletProvider('0x'+privateKey.toString('hex'), "https://gwan-ssl.wandevs.org:56891")
     },
-    swAddr: "0xDaA0e3F0BAF421Bc71c1A01E25c93936b97A4b97",
+    swAddr: "0x352a2b1f7324c39f7a62aF031F0B5ef20dDCbEC6",
     baseTokens: [ // wwan, wasp
       "0xdabd997ae5e4799be47d6e69d9431615cba28f48", "0x8b9f9f4aa70b1b0d586be8adfb19c1ac38e05e9a"
     ],
