@@ -21,8 +21,8 @@
 // const HDWalletProvider = require('@truffle/hdwallet-provider');
 // const infuraKey = "fj4jll3k.....";
 //
-// const fs = require('fs');
-// const mnemonic = fs.readFileSync(".secret").toString().trim();
+const fs = require('fs');
+const mnemonic = fs.readFileSync(".secret").toString().trim();
 const cfg = require('./script/config.js')
 module.exports = {
   /**
@@ -44,7 +44,7 @@ module.exports = {
     //
     development: {
       host: '127.0.0.1',
-      mnemonic:"skill level pulse dune pattern rival used syrup inner first balance sad",
+      mnemonic:mnemonic,
       network_id: '*',
       port: 8545,
       gasPrice: 1000000000,
@@ -96,6 +96,16 @@ module.exports = {
       skipDryRun: true,
       gas: 1e7,
       gasPrice: 1e9
+    },
+    Moonbase: {
+      provider: cfg['Moonbase'].provider,
+      network_id: "1287",
+      skipDryRun: true,
+    },
+    Moonriver: {
+      provider: cfg['Moonriver'].provider,
+      network_id: "1285",
+      skipDryRun: true,
     },
   },
 

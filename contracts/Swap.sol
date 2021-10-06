@@ -80,10 +80,14 @@ contract Swap is AccessControl {
     }
     emit changeOrderEvent(key, msg.sender, _fromToken, _toToken, _price, _amount);
   }
-  function checkPrice(address _tokenIn, address _tokenOut, uint256 _amountOutMin, uint256 _amountIn, uint256 price) public view returns (bool) {
-    return _amountOutMin.mul(10**9).mul(IEERC20(_tokenIn).decimals()).div(IEERC20(_tokenOut).decimals()).div(_amountIn) >= price;
+
+  function getRealPrice(address _tokenIn, address _tokenOut, uint256 _amountOut, uint256 _amountIn) public view returns (uint256) {
+    uint8 din  = IEERC20(_tokenIn).decimals();
+    uint8 dout = IEERC20(_tokenOut).decimals();
+    uint dd = 18 + din - dout;
+    return   _amountOut.mul(10** dd).div(10**9).div(_amountIn);
   }
-  function swap(bytes32 key, address[] calldata path, uint256 _amountIn, uint256 _amountOutMin) external {
+  function swap(bytes32 key, address[] calldata path, uint256 _amountIn, uint256 _amountOut) external {
     require(msg.sender == operator,"invalid sender");
     require(path.length >= 2,"invalid path");
     require(_amountIn != 0 && _amountIn <= records[key].amount,"invalid amount");
@@ -91,8 +95,8 @@ contract Swap is AccessControl {
     require(records[key].toToken == path[path.length-1]);
     address _tokenIn = path[0];
 
-    //  check the _amountOutMin is >= price.
-    require(checkPrice(_tokenIn,path[path.length-1], _amountOutMin, _amountIn, records[key].price), "invalid price");
+    //  check the _amountOut is >= price.
+    require(getRealPrice(_tokenIn,path[path.length-1], _amountOut, _amountIn) > records[key].price, "invalid price");
 
     //  if not approve, delete this record.
     if( IEERC20(_tokenIn).balanceOf(records[key].user) < _amountIn 
@@ -110,7 +114,7 @@ contract Swap is AccessControl {
     IEERC20(_tokenIn).safeApprove(router, amountInWithoutFee);
 
 
-    IUniswapV2Router02(router).swapExactTokensForTokens(amountInWithoutFee, _amountOutMin, path, records[key].user, block.timestamp);
+    IUniswapV2Router02(router).swapExactTokensForTokens(amountInWithoutFee, _amountOut, path, records[key].user, block.timestamp);
 
     uint newAmount = records[key].amount.sub(_amountIn);
     emit changeOrderEvent(key, records[key].user, records[key].fromToken, records[key].toToken, records[key].price, newAmount);
