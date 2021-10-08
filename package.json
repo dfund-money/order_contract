@@ -17,6 +17,8 @@
     "keccak256": "^1.0.3",
     "keythereum": "^1.2.0",
     "mongoose": "^6.0.5",
-    "truffle": "^5.1.44"
+    "solidity-coverage": "^0.7.17",
+    "truffle": "^5.1.44",
+    "truffle-plugin-verify": "^0.5.15"
   }
 }

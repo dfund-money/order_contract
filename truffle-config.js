@@ -83,6 +83,14 @@ module.exports = {
       gasPrice: 1000000000,
       skipDryRun:true,
     },
+    coverage: {
+      host: '127.0.0.1',
+      mnemonic:"skill level pulse dune pattern rival used syrup inner first balance sad",
+      network_id: '*',
+      port: 5545,
+      gasPrice: 1000000000,
+      skipDryRun:true,
+    },
     WanchainTestnet: {
       provider: cfg['WanchainTestnet'].provider,
       network_id: "999",
@@ -113,7 +121,10 @@ module.exports = {
   mocha: {
     // timeout: 100000
   },
-
+  plugins: [
+    "solidity-coverage",
+    "truffle-plugin-verify"
+  ], 
   // Configure your compilers
   // compilers: {
   //   solc: {
