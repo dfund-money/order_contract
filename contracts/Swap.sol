@@ -42,7 +42,6 @@ contract Swap is AccessControl {
 
   mapping(bytes32=>Order) public records;
 
-  //event changeOrderEvent(bytes32 indexed key, address user, address fromToken, address toToken, uint price, uint amount, bool isForever, uint interval);
   event ignore();  
   event changeOrderEvent(bytes32 indexed key, Order record);
 
@@ -79,7 +78,6 @@ contract Swap is AccessControl {
       records[key].isForever = _isForever;
       records[key].interval = _interval;
     }
-    //emit changeOrderEvent(key, msg.sender, _fromToken, _toToken, _price, _amount, _isForever, _interval);
     emit changeOrderEvent(key, records[key]);
   }
 
@@ -103,7 +101,6 @@ contract Swap is AccessControl {
     //  check the _amountOut is >= price.
     require(getRealPrice(_tokenIn,path[path.length-1], _amountOut, _amountIn) >= records[key].price, "invalid price");
 
-    //  if not approve, delete this record.
     if( IEERC20(_tokenIn).balanceOf(records[key].user) < _amountIn 
       || IEERC20(_tokenIn).allowance(records[key].user, address(this)) < _amountIn ) {
         emit ignore(); // operator will avoid this case.
@@ -117,19 +114,15 @@ contract Swap is AccessControl {
     uint amountInWithoutFee = _amountIn.sub(fee);
     IEERC20(_tokenIn).safeApprove(router, amountInWithoutFee);
 
-
     IIUniswapV2Router02(router).swapExactTokensForTokens(amountInWithoutFee, _amountOut, path, records[key].user, block.timestamp);
     if(records[key].isForever) {
       records[key].lastCheck = block.timestamp;
-      return;
-    }
-    uint newAmount = records[key].amount.sub(_amountIn);
-    //emit changeOrderEvent(key, records[key].user, records[key].fromToken, records[key].toToken, records[key].price, newAmount,records[key].isForever, records[key].interval);
-    emit changeOrderEvent(key, records[key]);
-    if(newAmount == 0) {
-      delete records[key];
     } else {
-      records[key].amount = newAmount;
+      records[key].amount = records[key].amount.sub(_amountIn);
+    }
+    emit changeOrderEvent(key, records[key]);
+    if(records[key].amount == 0) {
+      delete records[key];
     }
   }
 }
