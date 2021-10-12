@@ -17,6 +17,7 @@ struct Order {
   bool    isForever;
   uint    interval; // seconds
   uint    lastCheck; // only forever order
+  uint    received;
 }
 
 interface IIUniswapV2Router02{
@@ -27,6 +28,13 @@ interface IIUniswapV2Router02{
         address to,
         uint deadline
     ) external returns (uint[] memory amounts);
+        function swapExactTokensForTokensSupportingFeeOnTransferTokens(
+        uint amountIn,
+        uint amountOutMin,
+        address[] calldata path,
+        address to,
+        uint deadline
+    ) external;
 }
 interface IEERC20 is IERC20 {
   function symbol() external view returns (string memory);
@@ -67,18 +75,18 @@ contract Swap is AccessControl {
     require(_price != 0,'invalid price');
     bytes32 key = getKey(msg.sender, _fromToken, _toToken, _price);
 
+    records[key].user = msg.sender;
+    records[key].fromToken = _fromToken;
+    records[key].toToken = _toToken;
+    records[key].price = _price;
+    records[key].amount = _amount;
+    records[key].isForever = _isForever;
+    records[key].interval = _interval;
+    
+    emit changeOrderEvent(key, records[key]);
     if(_amount == 0) {
       delete records[key];
-    }else {
-      records[key].user = msg.sender;
-      records[key].fromToken = _fromToken;
-      records[key].toToken = _toToken;
-      records[key].price = _price;
-      records[key].amount = _amount;
-      records[key].isForever = _isForever;
-      records[key].interval = _interval;
-    }
-    emit changeOrderEvent(key, records[key]);
+    } 
   }
 
   function getRealPrice(address _tokenIn, address _tokenOut, uint256 _amountOut, uint256 _amountIn) public view returns (uint256) {
@@ -87,7 +95,19 @@ contract Swap is AccessControl {
     uint dd = 18 + din - dout;
     return   _amountOut.mul(10** dd).div(10**9).div(_amountIn);
   }
-  function swap(bytes32 key, address[] calldata path, uint256 _amountIn, uint256 _amountOut) external {
+
+  function _swap(uint amountInWithFee, uint _amountOut, address[] memory path, bytes32 key, bool isReflect) internal {
+    // TODO  for FINN later.
+    uint balanceBefore = IERC20(path[path.length - 1]).balanceOf(records[key].user);
+    if(isReflect){
+      IIUniswapV2Router02(router).swapExactTokensForTokensSupportingFeeOnTransferTokens(amountInWithFee, _amountOut, path, records[key].user, block.timestamp);
+    } else {
+      IIUniswapV2Router02(router).swapExactTokensForTokens(amountInWithFee, _amountOut, path, records[key].user, block.timestamp);
+    }
+    uint balanceAfter = IERC20(path[path.length - 1]).balanceOf(records[key].user);
+    records[key].received = records[key].received.add(balanceAfter.sub(balanceBefore));
+  }
+  function swap(bytes32 key, address[] calldata path, uint256 _amountIn, uint256 _amountOut, bool isReflect) external {
     require(msg.sender == operator,"invalid sender");
     require(path.length >= 2,"invalid path");
     require(_amountIn != 0 && _amountIn <= records[key].amount,"invalid amount");
@@ -97,7 +117,7 @@ contract Swap is AccessControl {
       require(block.timestamp >= records[key].lastCheck + records[key].interval,"interval");
     }
     address _tokenIn = path[0];
-
+    uint amountInWithFee = _amountIn.mul(997).div(1000);
     //  check the _amountOut is >= price.
     require(getRealPrice(_tokenIn,path[path.length-1], _amountOut, _amountIn) >= records[key].price, "invalid price");
 
@@ -107,20 +127,17 @@ contract Swap is AccessControl {
         return;
     }
     IEERC20(_tokenIn).safeTransferFrom(records[key].user, address(this), _amountIn);
+    IEERC20(_tokenIn).safeApprove(router, amountInWithFee);
 
-    uint fee = _amountIn.mul(3).div(1000);
-    IEERC20(_tokenIn).safeTransfer(feeTo, fee);
-
-    uint amountInWithoutFee = _amountIn.sub(fee);
-    IEERC20(_tokenIn).safeApprove(router, amountInWithoutFee);
-
-    IIUniswapV2Router02(router).swapExactTokensForTokens(amountInWithoutFee, _amountOut, path, records[key].user, block.timestamp);
+    _swap(amountInWithFee, _amountOut, path, key, isReflect);
+    
     if(records[key].isForever) {
       records[key].lastCheck = block.timestamp;
     } else {
       records[key].amount = records[key].amount.sub(_amountIn);
     }
     emit changeOrderEvent(key, records[key]);
+    IEERC20(_tokenIn).safeTransfer(feeTo, IEERC20(_tokenIn).balanceOf(address(this)));
     if(records[key].amount == 0) {
       delete records[key];
     }
