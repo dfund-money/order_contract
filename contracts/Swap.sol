@@ -96,8 +96,14 @@ contract Swap is AccessControl {
     return   _amountOut.mul(10** dd).div(10**9).div(_amountIn);
   }
 
-  function _swap(uint amountInWithFee, uint _amountOut, address[] memory path, bytes32 key, bool isReflect) internal {
+  function _swap(uint _amountIn, uint _amountOut, address[] memory path, bytes32 key, bool isReflect) internal {
     // TODO  for FINN later.
+
+    IEERC20(path[0]).safeTransferFrom(records[key].user, address(this), _amountIn);
+    uint balanceThis = IERC20(path[0]).balanceOf(address(this));
+    uint amountInWithFee = balanceThis.mul(997).div(1000);
+    IEERC20(path[0]).safeApprove(router, amountInWithFee);
+
     uint balanceBefore = IERC20(path[path.length - 1]).balanceOf(records[key].user);
     if(isReflect){
       IIUniswapV2Router02(router).swapExactTokensForTokensSupportingFeeOnTransferTokens(amountInWithFee, _amountOut, path, records[key].user, block.timestamp);
@@ -117,7 +123,6 @@ contract Swap is AccessControl {
       require(block.timestamp >= records[key].lastCheck + records[key].interval,"interval");
     }
     address _tokenIn = path[0];
-    uint amountInWithFee = _amountIn.mul(997).div(1000);
     //  check the _amountOut is >= price.
     require(getRealPrice(_tokenIn,path[path.length-1], _amountOut, _amountIn) >= records[key].price, "invalid price");
 
@@ -126,10 +131,8 @@ contract Swap is AccessControl {
         emit ignore(); // operator will avoid this case.
         return;
     }
-    IEERC20(_tokenIn).safeTransferFrom(records[key].user, address(this), _amountIn);
-    IEERC20(_tokenIn).safeApprove(router, amountInWithFee);
 
-    _swap(amountInWithFee, _amountOut, path, key, isReflect);
+    _swap(_amountIn, _amountOut, path, key, isReflect);
     
     if(records[key].isForever) {
       records[key].lastCheck = block.timestamp;
