@@ -6,41 +6,8 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "./interfaces/common.sol";
 
-
-struct Order {
-  address user;
-  address fromToken;
-  address toToken;
-  uint    price;
-  uint    amount;
-  bool    isForever;
-  uint    interval; // seconds
-  uint    lastCheck; // only forever order
-  uint    received;
-}
-
-interface IIUniswapV2Router02{
-    function swapExactTokensForTokens(
-        uint amountIn,
-        uint amountOutMin,
-        address[] calldata path,
-        address to,
-        uint deadline
-      ) external returns (uint[] memory amounts);
-
-    function swapExactTokensForTokensSupportingFeeOnTransferTokens(
-        uint amountIn,
-        uint amountOutMin,
-        address[] calldata path,
-        address to,
-        uint deadline
-    ) external;
-}
-interface IEERC20 is IERC20 {
-  function symbol() external view returns (string memory);
-  function decimals() external view returns (uint8);
-}
 contract Swap is AccessControl {
   using SafeMath for uint;
   using SafeERC20 for IEERC20;

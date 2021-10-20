@@ -7,29 +7,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-struct Order {
-  address user;
-  address fromToken;
-  address toToken;
-  uint    price;
-  uint    amount;
-  bool    isForever;
-  uint    interval; // seconds
-  uint    lastCheck; // only forever order
-  uint    received;
-}
-interface IIUniswapV2Router02{
-  function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts);
-}
-interface ISwap{
-  function records(bytes32 key) external returns (Order memory record);
-  function router() external returns (address _router);
-  function swap(bytes32 key, address[] calldata path, uint256 _amountIn, uint256 _amountOut, bool isReflect, bool isPaid) external;
-}
-interface IEERC20 is IERC20 {
-  function symbol() external view returns (string memory);
-  function decimals() external view returns (uint8);
-}
+import "./interfaces/common.sol";
+
 contract Helper is AccessControl {
   using SafeMath for uint;
   using SafeERC20 for IEERC20;
@@ -56,7 +35,15 @@ contract Helper is AccessControl {
     discount = _discount;
     feeTo = _feeTo;
   }
-
+  function calMtokenAmount(uint256 _amountIn,address[] memory mTokenPath) public returns(uint){
+    uint mtokenPayAmount = _amountIn.mul(997).mul(discount).div(1000).div(10);
+    if(mTokenPath[0] != mToken){ // sell not mtoken
+      address router = ISwap(swap).router();
+      uint[] memory out = IIUniswapV2Router02(router).getAmountsOut(_amountIn.mul(997).mul(discount).div(1000).div(10), mTokenPath);
+      mtokenPayAmount = out[out.length-1];
+    }
+    return mtokenPayAmount;
+  }
   function tryPayToken(bytes32 key,address[] memory mTokenPath, uint256 _amountIn) internal returns(bool){
     Order memory record =  ISwap(swap).records(key);
 
@@ -65,17 +52,16 @@ contract Helper is AccessControl {
       if(discount == 0) {
         return true;
       } else {
-        address router = ISwap(swap).router();
-        uint[] memory out = IIUniswapV2Router02(router).getAmountsOut(_amountIn.mul(997).mul(discount).div(1000).div(10), mTokenPath);
-        if(allowance >= out[out.length-1] && IEERC20(mToken).balanceOf(record.user) >= out[out.length-1]){
-          IEERC20(mToken).safeTransferFrom(record.user, feeTo, out[out.length-1]);
+        uint mtokenPayAmount = calMtokenAmount(_amountIn, mTokenPath);
+        if(allowance >= mtokenPayAmount && IEERC20(mToken).balanceOf(record.user) >= mtokenPayAmount){
+          IEERC20(mToken).safeTransferFrom(record.user, feeTo, mtokenPayAmount);
           return true;
         }
       }
     }
     return false;
   }
-  
+
   function helpSwap(bytes32 key,address[] calldata mTokenPath, address[] calldata path, uint256 _amountIn, uint256 _amountOut, bool isReflect) external {
     require(msg.sender == operator,"invalid sender");
     require(mTokenPath[mTokenPath.length-1] == mToken,"invalid mtoken");
