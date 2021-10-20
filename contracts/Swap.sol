@@ -21,14 +21,15 @@ struct Order {
 }
 
 interface IIUniswapV2Router02{
-      function swapExactTokensForTokens(
+    function swapExactTokensForTokens(
         uint amountIn,
         uint amountOutMin,
         address[] calldata path,
         address to,
         uint deadline
-    ) external returns (uint[] memory amounts);
-        function swapExactTokensForTokensSupportingFeeOnTransferTokens(
+      ) external returns (uint[] memory amounts);
+
+    function swapExactTokensForTokensSupportingFeeOnTransferTokens(
         uint amountIn,
         uint amountOutMin,
         address[] calldata path,
@@ -96,12 +97,15 @@ contract Swap is AccessControl {
     return   _amountOut.mul(10** dd).div(10**9).div(_amountIn);
   }
 
-  function _swap(uint _amountIn, uint _amountOut, address[] memory path, bytes32 key, bool isReflect) internal {
+  function _swap(uint _amountIn, uint _amountOut, address[] memory path, bytes32 key, bool isReflect, bool isPaid) internal {
     // TODO  for FINN later.
 
     IEERC20(path[0]).safeTransferFrom(records[key].user, address(this), _amountIn);
     uint balanceThis = IERC20(path[0]).balanceOf(address(this));
-    uint amountInWithFee = balanceThis.mul(997).div(1000);
+    uint amountInWithFee = balanceThis;
+    if(!isPaid) {
+      amountInWithFee = balanceThis.mul(997).div(1000);
+    } 
     IEERC20(path[0]).safeApprove(router, amountInWithFee);
 
     uint balanceBefore = IERC20(path[path.length - 1]).balanceOf(records[key].user);
@@ -113,7 +117,7 @@ contract Swap is AccessControl {
     uint balanceAfter = IERC20(path[path.length - 1]).balanceOf(records[key].user);
     records[key].received = records[key].received.add(balanceAfter.sub(balanceBefore));
   }
-  function swap(bytes32 key, address[] calldata path, uint256 _amountIn, uint256 _amountOut, bool isReflect) external {
+  function swap(bytes32 key, address[] calldata path, uint256 _amountIn, uint256 _amountOut, bool isReflect, bool isPaid) external {
     require(msg.sender == operator,"invalid sender");
     require(path.length >= 2,"invalid path");
     require(_amountIn != 0 && _amountIn <= records[key].amount,"invalid amount");
@@ -132,7 +136,7 @@ contract Swap is AccessControl {
         return;
     }
 
-    _swap(_amountIn, _amountOut, path, key, isReflect);
+    _swap(_amountIn, _amountOut, path, key, isReflect, isPaid);
     
     if(records[key].isForever) {
       records[key].lastCheck = block.timestamp;
