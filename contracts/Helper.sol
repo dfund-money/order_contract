@@ -35,7 +35,7 @@ contract Helper is AccessControl {
     discount = _discount;
     feeTo = _feeTo;
   }
-  function calMtokenAmount(uint256 _amountIn,address[] memory mTokenPath) public returns(uint){
+  function calMtokenAmount(uint256 _amountIn,address[] memory mTokenPath) public view returns(uint){
     uint mtokenPayAmount = _amountIn.mul(997).mul(discount).div(1000).div(10);
     if(mTokenPath[0] != mToken){ // sell not mtoken
       address router = ISwap(swap).router();

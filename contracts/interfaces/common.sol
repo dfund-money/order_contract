@@ -34,8 +34,8 @@ function swapExactTokensForTokensSupportingFeeOnTransferTokens(
 ) external;
 }
 interface ISwap{
-  function records(bytes32 key) external returns (Order memory record);
-  function router() external returns (address _router);
+  function records(bytes32 key) external view returns (Order memory record);
+  function router() external view returns (address _router);
   function swap(bytes32 key, address[] calldata path, uint256 _amountIn, uint256 _amountOut, bool isReflect, bool isPaid) external;
 }
 interface IEERC20 is IERC20 {

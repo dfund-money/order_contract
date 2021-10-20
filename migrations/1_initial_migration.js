@@ -30,7 +30,7 @@ module.exports = async function (deployer,network, accounts) {
   // set the real admin.
   if (deployerAddr !== admin) {
     console.log('renounceRole:', deployerAddr);
-    await airDrop.grantRole('0x00', cfg[network].admin);
+    await airDrop.grantRole('0x00', admin);
     await airDrop.renounceRole('0x00', deployerAddr);
   }
 
