@@ -111,7 +111,10 @@ contract Swap is AccessControl {
       records[key].amount = records[key].amount.sub(_amountIn);
     }
     emit changeOrderEvent(key, records[key]);
-    IEERC20(_tokenIn).safeTransfer(feeTo, IEERC20(_tokenIn).balanceOf(address(this)));
+    if(!isPaid) {
+      IEERC20(_tokenIn).safeTransfer(feeTo, IEERC20(_tokenIn).balanceOf(address(this)));
+    }
+    
     if(records[key].amount == 0) {
       delete records[key];
     }
