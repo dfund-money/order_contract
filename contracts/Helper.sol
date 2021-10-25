@@ -29,8 +29,8 @@ contract Helper is AccessControl {
   }
 
   function setDepedency(address _mToken, address _feeTo, uint _discount) external {
-    require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "not admin");
-    require(_discount <= 8, "invalid");
+    require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "invalid sender");
+    require(_discount <= 8, "invalid discount");
     mToken = _mToken;
     discount = _discount;
     feeTo = _feeTo;
@@ -39,7 +39,7 @@ contract Helper is AccessControl {
     uint mtokenPayAmount = _amountIn.mul(3).mul(discount).div(1000).div(10);
     if(mTokenPath[0] != mToken){ // sell not mtoken
       address router = ISwap(swap).router();
-      uint[] memory out = IIUniswapV2Router02(router).getAmountsOut(_amountIn.mul(997).mul(discount).div(1000).div(10), mTokenPath);
+      uint[] memory out = IIUniswapV2Router02(router).getAmountsOut(_amountIn.mul(3).mul(discount).div(1000).div(10), mTokenPath);
       mtokenPayAmount = out[out.length-1];
     }
     return mtokenPayAmount;
@@ -61,7 +61,6 @@ contract Helper is AccessControl {
     }
     return false;
   }
-
   function helpSwap(bytes32 key,address[] calldata mTokenPath, address[] calldata path, uint256 _amountIn, uint256 _amountOut, bool isReflect) external {
     require(msg.sender == operator,"invalid sender");
     require(mTokenPath[mTokenPath.length-1] == mToken,"invalid mtoken");

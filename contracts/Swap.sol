@@ -65,8 +65,6 @@ contract Swap is AccessControl {
   }
 
   function _swap(uint _amountIn, uint _amountOut, address[] memory path, bytes32 key, bool isReflect, bool isPaid) internal {
-    // TODO  for FINN later.
-
     IEERC20(path[0]).safeTransferFrom(records[key].user, address(this), _amountIn);
     uint balanceThis = IERC20(path[0]).balanceOf(address(this));
     uint amountInWithFee = balanceThis;

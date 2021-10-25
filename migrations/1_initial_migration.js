@@ -26,7 +26,7 @@ module.exports = async function (deployer,network, accounts) {
 
   // set swap operator to the helper contractor.
   await sw.setDepedency(feeTo, hp.address)
-
+  console.log("reset swap operator to ", hp.address)
   // set the real admin.
   if (deployerAddr !== admin) {
     console.log('renounceRole:', deployerAddr);

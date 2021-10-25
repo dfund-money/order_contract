@@ -66,36 +66,37 @@ contract("Swap check", function (accounts) {
   it("check swap",async function () {
     let tx,key
     let vin = BigNumber('1e18');
-    tx = await swap.changeOrder(token18.address, token6.address, 1000000000, vin, true, 10,{from:tuser})
-    key = getKey(tuser,token18.address,token6.address, 1000000000)
+    tx = await swap.changeOrder(token18.address, token6.address, 900000000, vin, true, 10,{from:tuser})
+    key = getKey(tuser,token18.address,token6.address, 900000000)
     let vout = BigNumber(1000000); // 1e6
-    tx = swap.swap(key, [], vin, vout,{from: accounts[9]})
+    tx = swap.swap(key, [], vin, vout,false,false,{from: accounts[9]})
     await expectRevert(tx, "invalid sender")
 
-    tx = swap.swap(key, [], vin, vout,{from: operator})
+    tx = swap.swap(key, [], vin, vout,false,false,{from: operator})
+    console.log("swap.operator:",await swap.operator(), operator)
     await expectRevert(tx, "invalid path")
-    tx = swap.swap(key, [token18.address, token6.address], BigNumber(0), vout,{from: operator})
+    tx = swap.swap(key, [token18.address, token6.address], BigNumber(0), vout,false,false,{from: operator})
     await expectRevert(tx, "invalid amount")
-    tx = swap.swap(key, [token18.address, token6.address], BigNumber('1.1e18'), vout,{from: operator})
+    tx = swap.swap(key, [token18.address, token6.address], BigNumber('1.1e18'), vout,false,false,{from: operator})
     await expectRevert(tx, "invalid amount")
-    tx = swap.swap(key, [token6.address, token6.address], BigNumber('1e18'), vout,{from: operator})
+    tx = swap.swap(key, [token6.address, token6.address], BigNumber('1e18'), vout,false,false,{from: operator})
     await expectRevert(tx, 'invalid fromToken')
-    tx = swap.swap(key, [token18.address, token18.address], BigNumber('1e18'), vout,{from: operator})
+    tx = swap.swap(key, [token18.address, token18.address], BigNumber('1e18'), vout,false,false,{from: operator})
     await expectRevert(tx, 'invalid toToken')
 
-    tx = swap.swap(key, [token18.address, token6.address], BigNumber('1e18'), BigNumber(1e6-1),{from: operator})
+    tx = swap.swap(key, [token18.address, token6.address], BigNumber('1e18'), BigNumber(8e5-1),false,false,{from: operator})
     await expectRevert(tx, 'invalid price')
 
-    tx = await swap.swap(key, [token18.address, token6.address], BigNumber('1e18'), BigNumber(1e6),{from: operator})
+    tx = await swap.swap(key, [token18.address, token6.address], BigNumber('1e18'), BigNumber(1e6),false,false,{from: operator})
     expectEvent(tx, 'ignore')
-    tx = await swap.swap(key, [token18.address, token6.address], BigNumber('1e18'), BigNumber(1e6+1),{from: operator})
+    tx = await swap.swap(key, [token18.address, token6.address], BigNumber('1e18'), BigNumber(1e6+1),false,false,{from: operator})
     expectEvent(tx, 'ignore')
 
     await token18.mint(tuser, BigNumber('9e18'))
-    tx = await swap.swap(key, [token18.address, token6.address], BigNumber('1e18'), BigNumber(1e6),{from: operator})
+    tx = await swap.swap(key, [token18.address, token6.address], BigNumber('1e18'), BigNumber(1e6),false,false,{from: operator})
     expectEvent(tx, 'ignore')
-    tx = await swap.swap(key, [token18.address, token6.address], BigNumber('1e18'), BigNumber(1e6+1),{from: operator})
-    console.log("swap.swap tx:", tx)
+    tx = await swap.swap(key, [token18.address, token6.address], BigNumber('1e18'), BigNumber(1e6+1),false,false,{from: operator})
+    //console.log("swap.swap tx:", tx)
     expectEvent(tx, 'ignore')
 
     await token18.approve(swap.address, BigNumber('1e24'),{from:tuser})
@@ -103,41 +104,45 @@ contract("Swap check", function (accounts) {
     console.log("balance:", balance.toString(10))
     let allowance = await token18.allowance(tuser, swap.address)
     console.log("allowance:", allowance.toString(10))
-
-    // await token18.approve(fakeUni.address, BigNumber('1e24'),{from:tuser})
-    // tx = await fakeUni.swapExactTokensForTokens(vin, vout, [token18.address, token6.address],tuser, 100,{from: tuser})
-    // console.log("fakeUni.swapExactTokensForTokens tx:", tx)
-
-    tx = await swap.swap(key, [token18.address, token6.address], BigNumber('1e18'), BigNumber(1e6),{from: operator})
-    console.log("tx:", tx)
-    balance = await token6.balanceOf(tuser)
-    assert(balance, BigNumber(1e6))
-    console.log("balance of token6:", balance.toString(10))
     let record
-    record = await swap.records(key)
-    assert(record.amount.toString(10), vin)
 
-    tx = await swap.changeOrder(token18.address, token6.address, 2000000000, vin, false, 10,{from:tuser})
-    key = getKey(tuser,token18.address,token6.address, 2000000000)
-    tx = await swap.swap(key, [token18.address, token6.address], BigNumber('1e17'), BigNumber(2e5),{from: operator})
+    await swap.changeOrder(token18.address, token6.address, 900000001, vin, true, 10,{from:tuser})
+    key = getKey(tuser,token18.address,token6.address, 900000001)
+    let balance1 = await token6.balanceOf(tuser)
+    tx = await swap.swap(key, [token18.address, token6.address], vin, BigNumber(1e6).times(997).div(1000),false,false,{from: operator})
+    //console.log("tx:", tx)
+    let balance2 = await token6.balanceOf(tuser)
+    assert.equal(balance2.sub(balance1).toString(10), "997000")
     record = await swap.records(key)
-    assert(record.amount.toString(10), BigNumber('9e17'))
-    balance = await token6.balanceOf(tuser)
-    assert(balance, BigNumber(11e5))
-    console.log("balance of token6:", balance.toString(10))
-
-    tx = await swap.swap(key, [token18.address, token6.address], BigNumber('9e17'), BigNumber(2e6),{from: operator})
+    assert.equal(record.amount.toString(10), vin.toString(10))
+  })
+  it("check swap",async function () {
+    let tx,key
+    let vin = BigNumber('1e18');
+    let balance1 = await token6.balanceOf(tuser)
+    await swap.changeOrder(token18.address, token6.address, 900000002, vin, false, 10,{from:tuser})
+    key = getKey(tuser,token18.address,token6.address, 900000002)
+    tx = await swap.swap(key, [token18.address, token6.address], vin, BigNumber(1e6).times(997).div(1000),false,false,{from: operator})
+    //console.log("tx:", tx)
+    let balance2 = await token6.balanceOf(tuser)
+    assert.equal(balance2.sub(balance1).toString(10), "997000")
     record = await swap.records(key)
-    assert(record.amount.toString(10), 0)
-    balance = await token6.balanceOf(tuser)
-    assert(balance, BigNumber(2e6))
-    console.log("balance of token6:", balance.toString(10))
+    assert.equal(record.amount.toString(10), "0")
 
-    tx = await swap.changeOrder(token18.address, token6.address, 3000000000, vin, true, 10,{from:tuser})
-    key = getKey(tuser,token18.address,token6.address, 3000000000)
-    await swap.swap(key, [token18.address, token6.address], BigNumber('1e17'), BigNumber(3e5),{from: operator})
-    tx = swap.swap(key, [token18.address, token6.address], BigNumber('9e17'), BigNumber(3e6),{from: operator})
-    await expectRevert(tx, 'interval')
+
+  })
+
+  it.skip("check swap",async function () {
+    let tx,key
+    let vin = BigNumber('1e18');
+    let balance1 = await token6.balanceOf(tuser)
+    await swap.changeOrder(token18.address, token6.address, 900000003, vin, false, 10,{from:tuser})
+    key = getKey(tuser,token18.address,token6.address, 900000003)
+    tx = await swap.swap(key, [token18.address, token6.address], vin, BigNumber(1e6).times(997).div(1000),false,false,{from: operator})
+    let balance2 = await token6.balanceOf(tuser)
+    assert.equal(balance2.sub(balance1).toString(10), BigNumber(1e5).toString(10))
+    record = await swap.records(key)
+    assert.equal(record.amount.toString(10), "0")
   })
 });
 
