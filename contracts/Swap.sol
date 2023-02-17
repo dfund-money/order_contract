@@ -2,7 +2,6 @@
 pragma solidity >=0.6.2;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
@@ -13,7 +12,7 @@ struct Order {
   address user;
   address fromToken;
   address toToken;
-  uint    price;
+  uint    price;  // 最小单位 * e18
   uint    amount;
   bool    isForever;
   uint    interval; // seconds
@@ -22,31 +21,19 @@ struct Order {
 }
 
 
-contract Swap is AccessControl {
+contract Swap  {
   using SafeMath for uint;
   using SafeERC20 for IEERC20;
 
   address public router;
-  address public feeTo;
-  address public operator;
-
   mapping(bytes32=>Order) public records;
 
-  event ignore();  
   event changeOrderEvent(bytes32 indexed key, Order record);
 
-  constructor(address _admin, address _router, address _feeTo, address _operator) public {
-    _setupRole(DEFAULT_ADMIN_ROLE, _admin);
+  constructor(address _router) public {
     router = _router;
-    feeTo = _feeTo;
-    operator = _operator;
   }
 
-  function setDepedency(address _feeTo, address _operator) external {
-    require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "not admin");
-    feeTo = _feeTo;
-    operator = _operator;
-  }
 
   function getKey(address user, address fromToken, address toToken, uint price) public pure returns (bytes32 key){
     return keccak256(abi.encode(user, fromToken, toToken, price));
@@ -56,6 +43,7 @@ contract Swap is AccessControl {
     require(_fromToken != _toToken,'same');
     require(_price != 0,'invalid price');
     bytes32 key = getKey(msg.sender, _fromToken, _toToken, _price);
+    // TODO 相同的user才能覆盖.
 
     records[key].user = msg.sender;
     records[key].fromToken = _fromToken;
@@ -66,55 +54,36 @@ contract Swap is AccessControl {
     records[key].interval = _interval;
     
     emit changeOrderEvent(key, records[key]);
-    if(_amount == 0) {
-      delete records[key];
-    } 
   }
 
-  function getRealPrice(address _tokenIn, address _tokenOut, uint256 _amountOut, uint256 _amountIn) public view returns (uint256) {
-    uint8 din  = IEERC20(_tokenIn).decimals();
-    uint8 dout = IEERC20(_tokenOut).decimals();
-    uint dd = 18 + din - dout;
-    return   _amountOut.mul(10** dd).div(10**9).div(_amountIn);
+
+  function _swap(uint _amountIn, uint _amountOutMin, address[] memory path, bytes32 key) internal returns(uint amountOut) {
+
   }
-
-  function _swap(uint _amountIn, uint _amountOut, address[] memory path, bytes32 key, bool isReflect) internal {
-    // TODO  for FINN later.
-
-    IEERC20(path[0]).safeTransferFrom(records[key].user, address(this), _amountIn);
-    uint balanceThis = IERC20(path[0]).balanceOf(address(this));
-    uint amountInWithFee = balanceThis.mul(997).div(1000);
-    IEERC20(path[0]).safeApprove(router, amountInWithFee);
-
-    uint balanceBefore = IERC20(path[path.length - 1]).balanceOf(records[key].user);
-    if(isReflect){
-      IIUniswapV2Router02(router).swapExactTokensForTokensSupportingFeeOnTransferTokens(amountInWithFee, _amountOut, path, records[key].user, block.timestamp);
-    } else {
-      IIUniswapV2Router02(router).swapExactTokensForTokens(amountInWithFee, _amountOut, path, records[key].user, block.timestamp);
-    }
-    uint balanceAfter = IERC20(path[path.length - 1]).balanceOf(records[key].user);
-    records[key].received = records[key].received.add(balanceAfter.sub(balanceBefore));
-  }
-  function swap(bytes32 key, address[] calldata path, uint256 _amountIn, uint256 _amountOut, bool isReflect) external {
-    require(msg.sender == operator,"invalid sender");
+  function swap(bytes32 key, address[] calldata path) external {
     require(path.length >= 2,"invalid path");
-    require(_amountIn != 0 && _amountIn <= records[key].amount,"invalid amount");
     require(records[key].fromToken == path[0],'invalid fromToken');
     require(records[key].toToken == path[path.length-1],'invalid toToken');
     if(records[key].isForever) {
       require(block.timestamp >= records[key].lastCheck + records[key].interval,"interval");
     }
-    address _tokenIn = path[0];
-    //  check the _amountOut is >= price.
-    require(getRealPrice(_tokenIn,path[path.length-1], _amountOut, _amountIn) >= records[key].price, "invalid price");
 
-    if( IEERC20(_tokenIn).balanceOf(records[key].user) < _amountIn 
-      || IEERC20(_tokenIn).allowance(records[key].user, address(this)) < _amountIn ) {
-        emit ignore(); // operator will avoid this case.
+    uint _amountIn = records[key].amount;
+    IEERC20 tokenIn = IEERC20(path[0]);
+    if( tokenIn.balanceOf(records[key].user) < _amountIn || tokenIn.allowance(records[key].user, address(this)) < _amountIn ) {
         return;
     }
 
-    _swap(_amountIn, _amountOut, path, key, isReflect);
+    tokenIn.safeTransferFrom(records[key].user, address(this), _amountIn);
+    tokenIn.safeApprove(router, _amountIn);
+
+    uint[] memory amounts = IIUniswapV2Router02(router).swapExactTokensForTokens(_amountIn, _amountOutMin, path, records[key].user, block.timestamp);
+    
+    return amounts[amounts.length-1];
+    records[key].received = 
+
+    uint amountOutMin = 0;
+    records[key].received = _swap(_amountIn, amountOutMin, path, key);
     
     if(records[key].isForever) {
       records[key].lastCheck = block.timestamp;
@@ -122,10 +91,6 @@ contract Swap is AccessControl {
       records[key].amount = records[key].amount.sub(_amountIn);
     }
     emit changeOrderEvent(key, records[key]);
-    IEERC20(_tokenIn).safeTransfer(feeTo, IEERC20(_tokenIn).balanceOf(address(this)));
-    if(records[key].amount == 0) {
-      delete records[key];
-    }
   }
 }
 

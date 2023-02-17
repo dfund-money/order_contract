@@ -18,11 +18,10 @@
  *
  */
 
-// const HDWalletProvider = require('@truffle/hdwallet-provider');
+const HDWalletProvider = require('@truffle/hdwallet-provider');
 // const infuraKey = "fj4jll3k.....";
 //
-const fs = require('fs');
-const mnemonic = fs.readFileSync(".secret").toString().trim();
+const mnemonic = require('fs').readFileSync(process.env.HOME + "/.keystore/.secret").toString().trim();
 const cfg = require('./script/config.js')
 module.exports = {
   /**
@@ -92,18 +91,14 @@ module.exports = {
       skipDryRun:true,
     },
     WanchainTestnet: {
-      provider: cfg['WanchainTestnet'].provider,
+      provider: () => new HDWalletProvider(mnemonic, "https://gwan-ssl.wandevs.org:46891"),
       network_id: "999",
-      skipDryRun: true,
-      gas: 1e7,
-      gasPrice: 1e9
+      skipDryRun:true
     },
     Wanchain: {
-      provider: cfg['Wanchain'].provider,
+      provider: () => new HDWalletProvider(mnemonic, "https://gwan-ssl.wandevs.org:56891"),
       network_id: "888",
-      skipDryRun: true,
-      gas: 1e7,
-      gasPrice: 1e9
+      skipDryRun:true
     },
     Moonbase: {
       provider: cfg['Moonbase'].provider,
